@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archivio accelerazionista</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+
+    <style>
+        body { font-family: 'Space Mono', monospace; }
+        .hacker-glow:focus {
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+            border-color: #22c55e;
+        }
+        /* Scrollbar sottile in stile dark */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-[#0a0f18] text-slate-300 min-h-screen p-6 md:p-12">
+
+    <div x-data="searchApp()" x-init="loadData()" class="max-w-3xl mx-auto">
+        
+        <header class="mb-12 border-b border-slate-800 pb-6">
+            <h1 class="text-emerald-500 text-xl font-bold tracking-tighter">
+                > Archivio Accelerazionista <span class="animate-pulse">_</span>
+            </h1>
+            <p class="text-xs text-slate-500 mt-2 uppercase tracking-widest">Cerca nell'archivio...</p>
+        </header>
+
+        <div class="relative mb-12">
+            <input 
+                type="text" 
+                x-model="query" 
+                placeholder="Digita per cercare nell'archivio..." 
+                class="w-full bg-[#0f172a] border border-slate-700 p-4 rounded-none outline-none transition-all hacker-glow text-emerald-400 placeholder-slate-600"
+            >
+            <div class="absolute right-4 top-4 text-slate-600 text-xs" x-text="filteredItems.length + ' RISULTATI'"></div>
+        </div>
+
+        <div class="space-y-10">
+    <template x-for="item in filteredItems" :key="item.id">
+        <article class="group border-l-2 border-slate-800 hover:border-emerald-500 pl-6 transition-all">
+            
+            <div class="flex items-center gap-3 mb-1">
+                <span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded uppercase tracking-tighter" x-text="item.lang"></span>
+                <span class="text-[9px] text-slate-600 font-mono" x-text="'ID: #' + item.id"></span>
+                <span class="text-[9px] text-slate-600" x-text="item.date"></span>
+            </div>
+
+            <div class="mb-2">
+                <span class="text-emerald-400 font-bold text-sm tracking-wide uppercase" x-text="item.author"></span>
+                <span class="text-slate-500 text-[10px] ml-2 opacity-70" x-text="'— ' + item.source"></span>
+            </div>
+
+            <p class="text-slate-300 leading-relaxed group-hover:text-white transition-colors" x-text="item.text"></p>
+            
+        </article>
+    </template>
+    </div>
+    
+  </div>
+
+    <script>
+        function searchApp() {
+            return {
+                query: '',
+                items: [],
+                async loadData() {
+                    try {
+                        const response = await fetch('content.json');
+                        this.items = await response.json();
+                    } catch (e) {
+                        console.error("Errore nel caricamento del file JSON:", e);
+                    }
+                },
+                get filteredItems() {
+                    if (this.query.trim() === '') return this.items;
+                    
+                    const options = {
+                        keys: ['text'],
+                        threshold: 0.3,
+                        distance: 100
+                    };
+                    
+                    const fuse = new Fuse(this.items, options);
+                    return fuse.search(this.query).map(result => result.item);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
